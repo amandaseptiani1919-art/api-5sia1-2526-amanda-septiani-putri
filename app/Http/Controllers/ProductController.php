@@ -13,6 +13,7 @@ class ProductController extends Controller
      */
     public function index()
     {
+
         // untuk memanggil relasi terkait, sebutkan
         // nama method relasi yang ada di model tersebut
         // Gunakan method with() untuk menyertakan relasi tabel
@@ -77,19 +78,60 @@ class ProductController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Create
+     * simpan produk baru ke database
      */
     public function store(Request $request)
     {
+        try {
+            //
+            $validated = $request->validate([
+                'user_id'       => 'nullable|exists:users,id',
+                'name'          => 'required|string|max:255',
+                'price'         => 'required|numeric|min:0',
+                'stock'         => 'required|integer|min:1',
+                'description'   => 'nullable|string',
+                'is_available'  => 'boolean',
+            ], [
+                'name.required'      => 'Nama produk jangan dikosongkan',
+                'price.required'     => 'Harga wajib diisi',
+                'price.numeric'      => 'Harga harus berupa angka',
+                'stock.required'     => 'Stok wajib diisi',
+                'stock.integer'      => 'Stok harus berupa angka'
+            
+            ]);
+
+            $product = Product::create($validated);
+
+            // return hasil simpan
+            return response()->json([
+                'pesan'     => 'Produk Berhasil ditambahkan',
+                'data'      => $product,
+            ]);
+        } catch (ValidationException $ex) {
+            return response()->json([
+                'pesan'     =>'Gagal',
+                'data'      => $ex->getMessage(),
+            ]);
+        }
+
         //
     }
 
     /**
-     * Display the specified resource.
+     * Read
      */
-    public function show(Product $product)
+    public function show($id)
     {
-        //
+        //mencari produk berdasarkan id
+        $product = Product::with('user')->find($id);
+
+        // produk tidak ditemukan
+        if (!$product) {
+            return response()->json(['pesan' => 'Produk tidak ditemukan']);
+        }
+        // jika produk ada tampilkan 
+        return response()->json($product);
     }
 
     /**
@@ -101,18 +143,76 @@ class ProductController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     *update
      */
-    public function update(Request $request, Product $product)
+    public function update(Request $r, $id)
     {
-        //
+        try {
+            // cari produk
+            $product = Product::findOrFail($id);
+
+            // validasi ubah data
+            $validate = $r->validate([
+                'name'      => 'string|max:255',
+                'price'     => 'numeric|min:0',
+                'image_path' => 'nullable|string',
+                'stock'     => 'integer|min:1',
+                'description' => 'nullable|string',
+                'is_available' => 'boolean'
+            ]);
+            // ---- cara sederhana
+        $product->update([
+            'name'        => $r->name ?? $product->name,
+            'price'       => $r->price ?? $product->price,
+            'stock'       => $r->stock ?? $product->stock,
+            'description' => $r->description ?? $product->description,
+            'is_available'=> $r->is_available ?? $product->is_available,
+        ]);
+
+        // ---- cara yang lebih "complete"
+        $data = $r->all();
+
+        $product->update([
+            'name'        => $data['name'] ?? $product->name,
+            'price'       => $data['price'] ?? $product->price,
+            'stock'       => $data['stock'] ?? $product->stock,
+            'description' => $data['description'] ?? $product->description,
+            'is_available'=> $data['is_available'] ?? $product->is_available,
+        ]);
+
+        // kembalikan data produk yang sudah diubah beserta pesan sukses
+        return response()->json([
+            'pesan'  => 'Produk berhasil diubah!',
+            'produk' => Product::with('user')->find($product->id)
+        ]);
+
+    } catch (ValidationException $e) {
+        return response()->json([
+            'pesan' => 'Validasi gagal!',
+            'error' => $e->validator->errors(),
+        ]);
     }
+}
+
 
     /**
-     * Remove the specified resource from storage.
+     * D = Delete
+     * Hapus produk berdasarkan id
      */
-    public function destroy(Product $product)
+    public function destroy($id)
     {
-        //
+        $product = Product::find($id);
+
+        if (!$product) {
+            return response()->json([
+                'pesan' => 'Produk tidak ditemukan'
+            ]);
+        }
+
+        $product->delete();
+
+        return response()->json([
+            'pesan' => 'Produk berhasil dihapus!'
+        ]);
     }
 }

@@ -12,7 +12,15 @@ class Product extends Model
 {
     use HasFactory;
     // ijin kan semua kolom di isi secara massal
-    protected $guarded = [];
+    protected $fillable = [
+        'user_id',
+        'name',
+        'price',
+        'stock',
+        'description',
+        'is_available',
+        'image_path',
+    ];
 
     // format data saat di panggil
     protected $casts = [

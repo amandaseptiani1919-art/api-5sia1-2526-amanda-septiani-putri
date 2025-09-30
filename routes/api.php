@@ -19,8 +19,22 @@ use App\Http\Controllers\ProductController;
 // 1. ambil semua data Produk beserta pemiliknya (user)
 // action url = [NamaControler::class, 'method']
 Route::get('/products/semuanya', [ProductController::class, 'index']);
+
 // 2. cari produk tersedia berdasarkan nama
 Route::get('/products/cari', [ProductController::class, 'search']);
+
+// 3. tambah produk baru
+Route::post('/products/tambah', [ProductController::class, 'store']);
+
+// 4. read detal produk berdasarkan id
+Route::get('/products/{id}', [ProductController::class, 'show']);
+
+// 5. update produk 
+Route::put('/products/update/{id}', [ProductController::class, 'update']);
+
+// 6. hapus produk
+Route::delete('/products/delete/{id}', [ProductController::class, 'destroy']);
+
 
 // route ambil semua data user
 // Method Get
